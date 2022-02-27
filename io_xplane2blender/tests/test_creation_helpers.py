@@ -373,12 +373,9 @@ def create_datablock_collection(
         scene: bpy.types.Scene = bpy.data.scenes[scene]
     except (KeyError, TypeError):  # scene is str and not found or is None
         scene: bpy.types.Scene = bpy.context.scene
-
     try:
-        parent: bpy.types.Collection = bpy.data.collections[
-            parent.name if isinstance(parent, bpy.types.Collection) else parent
-        ]
-    except (KeyError, TypeError):  # parent is None or not found
+        parent: bpy.types.Collection = bpy.data.collections[parent]
+    except (KeyError, TypeError):  # parent is str and not found or is Collection
         parent: bpy.types.Collection = scene.collection
 
     if coll.name not in parent.children:
@@ -921,7 +918,6 @@ def set_animation_data(
                 dataref_prop = dref
                 break
             dataref_index += 1
-
     for kf_info in keyframe_infos:
         bpy.context.scene.frame_current = kf_info.idx
 
@@ -942,6 +938,10 @@ def set_animation_data(
 
         if kf_info.location:
             blender_struct.location = kf_info.location
+            blender_struct.xplane.datarefs[dataref_index].keyframe_insert(
+                data_path="value", 
+                group=blender_struct.name if struct_is_bone else "Location",
+            )
             blender_struct.keyframe_insert(
                 data_path="location",
                 group=blender_struct.name if struct_is_bone else "Location",
@@ -955,7 +955,11 @@ def set_animation_data(
                 data_path = "rotation_{}".format(kf_info.rotation_mode.lower())
 
             set_rotation(blender_struct, kf_info.rotation, kf_info.rotation_mode)
-
+            
+            blender_struct.xplane.datarefs[dataref_index].keyframe_insert(
+                data_path="value", 
+                group=blender_bone.name if struct_is_bone else "Rotation",
+            )
             blender_struct.keyframe_insert(
                 data_path=data_path,
                 group=blender_bone.name if struct_is_bone else "Rotation",
